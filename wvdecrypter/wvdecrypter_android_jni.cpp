@@ -405,6 +405,8 @@ RETRY_OPEN:
     }
   }
 
+  Log(SSD_HOST::LL_DEBUG, "SecurityLevel: %d, MaxSecurityLevel: %d", media_drm_.GetMediaDrm()->getSecurityLevel(session_id_), media_drm_.GetMediaDrm()->getMaxSecurityLevel());
+
   if (session_id_.size() == 0)
   {
     Log(SSD_HOST::LL_ERROR, "Unable to open DRM session");
