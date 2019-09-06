@@ -31,7 +31,7 @@ AdaptiveStream::AdaptiveStream(AdaptiveTree &tree, AdaptiveTree::StreamType type
   , tree_(tree)
   , type_(type)
   , observer_(nullptr)
-  , current_period_(tree_.periods_.empty() ? nullptr : tree_.periods_[0])
+  , current_period_(tree_.current_period_)
   , current_adp_(nullptr)
   , current_rep_(nullptr)
   , segment_read_pos_(0)

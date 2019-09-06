@@ -520,12 +520,12 @@ void HLSTree::OnDataArrived(unsigned int segNum, uint16_t psshSet, uint8_t iv[16
   {
     std::lock_guard<std::mutex> lck(treeMutex_);
 
-    PSSH &pssh(psshSets_[psshSet]);
+    Period::PSSH &pssh(current_period_->psshSets_[psshSet]);
     //Encrypted media, decrypt it
     if (pssh.defaultKID_.empty())
     {
       //First look if we already have this URL resolved
-      for (std::vector<PSSH>::const_iterator b(psshSets_.begin()), e(psshSets_.end());b != e; ++b)
+      for (std::vector<Period::PSSH>::const_iterator b(current_period_->psshSets_.begin()), e(current_period_->psshSets_.end());b != e; ++b)
         if (b->pssh_ == pssh.pssh_ && !b->defaultKID_.empty())
         {
           pssh.defaultKID_ = b->defaultKID_;

@@ -95,6 +95,7 @@ public:
     const char *ov_audio);
   virtual ~Session();
   bool initialize(const std::uint8_t config, uint32_t max_user_bandwidth);
+  bool Session::InitializePeriod();
   SampleReader *GetNextSample();
 
   struct STREAM
@@ -150,6 +151,12 @@ public:
   uint32_t GetIncludedStreamMask() const;
   CRYPTO_INFO::CRYPTO_KEY_SYSTEM GetCryptoKeySystem() const;
 
+  int GetChapter() const;
+  int GetChapterCount() const;
+  const char* GetChapterName(int ch) const;
+  int64_t GetChapterPos(int ch) const;
+  bool SeekChapter(int ch);
+
   //Observer Section
   void OnSegmentChanged(adaptive::AdaptiveStream *stream) override;
   void OnStreamChange(adaptive::AdaptiveStream *stream) override;
@@ -187,9 +194,11 @@ private:
   uint16_t width_, height_;
   int max_resolution_, max_secure_resolution_;
   uint32_t fixed_bandwidth_;
+  uint32_t maxUserBandwidth_;
   bool changed_;
   bool manual_streams_;
   uint64_t elapsed_time_;
   uint8_t media_type_mask_;
+  uint8_t drmConfig_;
   bool ignore_display_;
 };
