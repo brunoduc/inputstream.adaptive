@@ -111,6 +111,13 @@ namespace adaptive
       CONTAINERTYPE_MATROSKA,
     };
 
+    enum
+    {
+      ENCRYTIONSTATE_UNENCRYPTED = 0,
+      ENCRYTIONSTATE_ENCRYPTED = 1,
+      ENCRYTIONSTATE_SUPPORTED = 2
+    };
+
     // Node definition
     struct Segment
     {
@@ -345,13 +352,16 @@ namespace adaptive
 
     struct Period
     {
-      Period(): timescale_(0), duration_(0), startPTS_(0), startNumber_(1) {};
+      Period() = default;
       ~Period() { for (std::vector<AdaptationSet* >::const_iterator b(adaptationSets_.begin()), e(adaptationSets_.end()); b != e; ++b) delete *b; };
       std::vector<AdaptationSet*> adaptationSets_;
-      std::string base_url_;
-      uint32_t timescale_, duration_;
-      uint64_t startPTS_;
-      unsigned int startNumber_;
+      std::string base_url_, id_;
+      uint32_t timescale_ = 0, startNumber_ = 1;
+      uint64_t startPTS_ = 0;
+      uint64_t duration_ = 0;
+      unsigned int  encryptionState_ = ENCRYTIONSTATE_UNENCRYPTED;
+      uint32_t included_types_ = 0;
+      bool need_secure_decoder_ = false;
       SPINCACHE<uint32_t> segment_durations_;
       SegmentTemplate segtpl_;
     }*current_period_;
@@ -369,7 +379,7 @@ namespace adaptive
     uint32_t segcount_;
     uint64_t overallSeconds_, stream_start_, available_time_, publish_time_, base_time_;
     uint64_t minPresentationOffset;
-    bool has_timeshift_buffer_;
+    bool has_timeshift_buffer_, has_overall_seconds_;
 
     uint32_t bandwidth_;
     std::map<std::string, std::string> manifest_headers_;
@@ -393,14 +403,6 @@ namespace adaptive
     };
     std::vector<PSSH> psshSets_;
 
-    enum
-    {
-      ENCRYTIONSTATE_UNENCRYPTED = 0,
-      ENCRYTIONSTATE_ENCRYPTED = 1,
-      ENCRYTIONSTATE_SUPPORTED = 2
-    };
-    unsigned int  encryptionState_;
-    uint32_t included_types_;
     uint8_t adpChannelCount_, adp_pssh_set_;
     uint16_t adpwidth_, adpheight_;
     uint32_t adpfpsRate_;
@@ -408,7 +410,6 @@ namespace adaptive
     ContainerType adpContainerType_;
     bool adp_timelined_, period_timelined_;
 
-    bool need_secure_decoder_;
     bool current_hasRepURN_, current_hasAdpURN_;
     std::string current_pssh_, current_defaultKID_, current_iv_;
     std::string license_url_;
@@ -432,7 +433,7 @@ namespace adaptive
     void set_download_speed(double speed);
     void SetFragmentDuration(const AdaptationSet* adp, const Representation* rep, size_t pos, uint64_t timestamp, uint32_t fragmentDuration, uint32_t movie_timescale);
 
-    bool empty(){ return !current_period_ || current_period_->adaptationSets_.empty(); };
+    bool empty(){ return periods_.empty(); };
     const AdaptationSet *GetAdaptationSet(unsigned int pos) const { return current_period_ && pos < current_period_->adaptationSets_.size() ? current_period_->adaptationSets_[pos] : 0; };
     std::mutex &GetTreeMutex() { return treeMutex_; };
     bool HasUpdateThread() const { return updateThread_ != 0 && has_timeshift_buffer_ && updateInterval_ && !update_parameter_.empty(); };

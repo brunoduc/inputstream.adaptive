@@ -167,7 +167,7 @@ bool HLSTree::open(const std::string &url, const std::string &manifestUpdatePara
         else
         {
           rep->flags_ = Representation::INCLUDEDSTREAM;
-          included_types_ |= 1U << type;
+          current_period_->included_types_ |= 1U << type;
         }
 
         if ((res = map.find("CHANNELS")) != map.end())
@@ -206,7 +206,7 @@ bool HLSTree::open(const std::string &url, const std::string &manifestUpdatePara
         else
         {
           // We assume audio is included
-          included_types_ |= 1U << AUDIO;
+          current_period_->included_types_ |= 1U << AUDIO;
           m_audioCodec = getAudioCodec(map["CODECS"]);
         }
       }
@@ -230,7 +230,7 @@ bool HLSTree::open(const std::string &url, const std::string &manifestUpdatePara
         current_adaptationset_->representations_.push_back(current_representation_);
 
         // We assume audio is included
-        included_types_ |= 1U << AUDIO;
+        current_period_->included_types_ |= 1U << AUDIO;
         m_audioCodec = getAudioCodec("");
         break;
       }

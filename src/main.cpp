@@ -1218,8 +1218,8 @@ public:
 
   virtual uint64_t  Elapsed(uint64_t basePTS) override
   {
-    uint64_t manifestPTS = (m_pts > m_ptsDiff) ? m_pts - m_ptsDiff : 0;
-    return manifestPTS > basePTS ? manifestPTS - basePTS : 0ULL;
+    //uint64_t manifestPTS = (m_pts > m_ptsDiff) ? m_pts - m_ptsDiff : 0;
+    return m_pts > basePTS ? m_pts - basePTS : 0ULL;
   };
 
   virtual AP4_UI32 GetStreamId()const override { return m_streamId; };
@@ -2128,12 +2128,13 @@ bool Session::initialize(const std::uint8_t config, uint32_t max_user_bandwidth)
     kodi::Log(ADDON_LOG_ERROR, "Could not open / parse mpdURL (%s)", mpdFileURL_.c_str());
     return false;
   }
-  kodi::Log(ADDON_LOG_INFO, "Successfully parsed .mpd file. #Streams: %d Type: %s, Download speed: %0.4f Bytes/s", 
-    adaptiveTree_->periods_[0]->adaptationSets_.size(),
+  kodi::Log(ADDON_LOG_INFO, "Successfully parsed .mpd file. #Periods: %ld, #Streams in first period: %ld, Type: %s, Download speed: %0.4f Bytes/s",
+    adaptiveTree_->periods_.size(),
+    adaptiveTree_->current_period_->adaptationSets_.size(),
     adaptiveTree_->has_timeshift_buffer_ ? "live" : "VOD",
     adaptiveTree_->download_speed_);
 
-  if (adaptiveTree_->encryptionState_ == adaptive::AdaptiveTree::ENCRYTIONSTATE_ENCRYPTED)
+  if (adaptiveTree_->current_period_->encryptionState_ == adaptive::AdaptiveTree::ENCRYTIONSTATE_ENCRYPTED)
   {
     kodi::Log(ADDON_LOG_ERROR, "Unable to handle decryption. Unsupported!");
     return false;
@@ -2160,7 +2161,7 @@ bool Session::initialize(const std::uint8_t config, uint32_t max_user_bandwidth)
   memset(&cdm_sessions_.front(), 0, sizeof(CDMSESSION));
 
   // Try to initialize an SingleSampleDecryptor
-  if (adaptiveTree_->encryptionState_)
+  if (adaptiveTree_->current_period_->encryptionState_)
   {
     if (license_key_.empty())
       license_key_ = adaptiveTree_->license_url_;
@@ -2360,7 +2361,7 @@ bool Session::initialize(const std::uint8_t config, uint32_t max_user_bandwidth)
           session.cdm_session_str_ = session.single_sample_decryptor_->GetSessionId();
           secure_video_session_ = true;
           // Override this setting by information passed in manifest
-          if (!adaptiveTree_->need_secure_decoder_)
+          if (!adaptiveTree_->current_period_->need_secure_decoder_)
             session.decrypter_caps_.flags &= ~SSD::SSD_DECRYPTER::SSD_CAPS::SSD_SECURE_DECODER;
         }
       }
@@ -2761,7 +2762,7 @@ uint32_t Session::GetIncludedStreamMask() const
   const INPUTSTREAM_INFO::STREAM_TYPE adp2ips[] = { INPUTSTREAM_INFO::TYPE_NONE, INPUTSTREAM_INFO::TYPE_VIDEO, INPUTSTREAM_INFO::TYPE_AUDIO, INPUTSTREAM_INFO::TYPE_SUBTITLE};
   uint32_t res(0);
   for (unsigned int i(0); i < 4; ++i)
-    if (adaptiveTree_->included_types_ & (1U << i))
+    if (adaptiveTree_->current_period_->included_types_ & (1U << i))
       res |= (1U << adp2ips[i]);
   return res;
 }
@@ -3018,6 +3019,9 @@ void CInputStreamAdaptive::GetCapabilities(INPUTSTREAM_CAPABILITIES &caps)
     INPUTSTREAM_CAPABILITIES::SUPPORTS_IPOSTIME |
     INPUTSTREAM_CAPABILITIES::SUPPORTS_SEEK |
     INPUTSTREAM_CAPABILITIES::SUPPORTS_PAUSE;
+#if INPUTSTREAM_VERSION_LEVEL >= 2
+  caps.m_mask |= INPUTSTREAM_CAPABILITIES::SUPPORTS_ICHAPTER;
+#endif
 }
 
 struct INPUTSTREAM_INFO CInputStreamAdaptive::GetStream(int streamid)
